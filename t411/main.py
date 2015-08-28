@@ -21,6 +21,7 @@ class T411(TorrentProvider, MovieProvider):
         'test': 'http://www.t411.io/',
         'detail': 'http://www.t411.io/torrents/?id=%s',
         'search': 'http://www.t411.io/torrents/search/?',
+        'download': 'http://www.t411.io/torrents/download/?id=%s'
     }
 
     http_time_between_calls = 1 #seconds
@@ -76,9 +77,64 @@ class T411(TorrentProvider, MovieProvider):
                 continue
         
         return results
-    
-    def _search(self, movie, quality, results):
 
+    def _searchOnTitle(self, title, movie, quality, results):
+
+        # test the new title and search for it if valid
+        newTitle = self.getFrenchTitle(title, str(movie['info']['year']))
+        request = ''
+        if isinstance(title, str):
+            title = title.decode('utf8')
+        if newTitle is not None:
+            request = (u'(' + title + u')|(' + newTitle + u')').replace(':', '')
+        else:
+            request = title.replace(':', '')
+        request = urllib2.quote(request.encode('iso-8859-1'))
+
+        log.debug('Looking on T411 for movie named %s or %s' % (title, newTitle))
+        url = self.urls['search'] + "search=%s %s" % (request, self.acceptableQualityTerms(quality))
+        data = self.getHTMLData(url)
+
+        log.debug('Received data from T411')
+        if data:
+            log.debug('Data is valid from T411')
+            html = BeautifulSoup(data)
+
+            try:
+                result_table = html.find('table', attrs = {'class':'results'})
+                if not result_table:
+                    log.debug('No table results from T411')
+                    return
+
+                torrents = result_table.find('tbody').findAll('tr')
+                for result in torrents:
+                    idt = result.findAll('td')[2].findAll('a')[0]['href'][1:].replace('torrents/nfo/?id=','')
+                    release_name = result.findAll('td')[1].findAll('a')[0]['title']
+                    words = title.lower().replace(':',' ').split()
+                    if self.conf('ignore_year'):
+                        index = release_name.lower().find(words[-1] if words[-1] != 'the' else words[-2]) + len(words[-1] if words[-1] != 'the' else words[-2]) +1
+                        index2 = index + 7
+                        if not str(movie['info']['year']) in release_name[index:index2]:
+                            release_name = release_name[0:index] + '(' + str(movie['info']['year']) + ').' + release_name[index:]
+                    if 'the' not in release_name.lower() and (words[-1] == 'the' or words[0] == 'the'):
+                        release_name = 'the.' + release_name
+                    if 'multi' in release_name.lower():
+                        release_name = release_name.lower().replace('truefrench','').replace('french','')
+                    age = result.findAll('td')[4].text
+                    results.append({
+                        'id': idt,
+                        'name': self.replaceTitle(release_name, title, newTitle),
+                        'url': self.urls['download'] % idt,
+                        'detail_url': self.urls['detail'] % idt,
+                        'size': self.parseSize(str(result.findAll('td')[5].text)),
+                        'seeders': result.findAll('td')[7].text,
+                        'leechers': result.findAll('td')[8].text,
+                    })
+
+            except:
+                log.error('Failed to parse T411: %s' % (traceback.format_exc()))
+
+    def _search(self, movie, quality, results):
         # Cookie login
         if not self.last_login_check and not self.login():
             return
@@ -120,7 +176,7 @@ class T411(TorrentProvider, MovieProvider):
                                 idt = result.findAll('td')[2].findAll('a')[0]['href'][1:].replace('torrents/nfo/?id=','')
                                 name = result.findAll('td')[1].findAll('a')[0]['title']
                                 testname=searcher.correctName(name,movie['title'])
-                                if testname==0:
+                                if not testname:
                                     continue
                                 url = ('http://www.t411.io/torrents/download/?id=%s' % idt)
                                 detail_url = ('http://www.t411.io/torrents/?id=%s' % idt)
@@ -142,7 +198,8 @@ class T411(TorrentProvider, MovieProvider):
                                 new['leechers'] = tryInt(leecher)
                                 new['extra_check'] = extra_check
                                 new['download'] = self.download
-        
+
+                                log.debug("url='%s'"%str(url))
                                 results.append(new)
     
                         except:
@@ -175,7 +232,6 @@ class T411(TorrentProvider, MovieProvider):
         return tryInt(age)
 
     def login(self):
-
         self.opener.addheaders = [
             ('User-Agent', 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.1 (KHTML, like Gecko)'),
             ('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'),
@@ -214,18 +270,110 @@ class T411(TorrentProvider, MovieProvider):
             return
         try:
             request = urllib2.Request(url)
-    
+
+            log.debug('Reading url %s'%url)
             response = self.last_login_check.open(request)
             # unzip if needed
             if response.info().get('Content-Encoding') == 'gzip':
+                log.debug("gzip content")
                 buf = StringIO(response.read())
                 f = gzip.GzipFile(fileobj = buf)
                 data = f.read()
                 f.close()
             else:
+                log.debug("not gziped")
                 data = response.read()
+            log.debug("closing")
             response.close()
             return data
-        except:
+        except Exception, e:
+            log.error(str(e))
             return 'try_next'
 
+    def acceptableQualityTerms(self, quality):
+        """
+        This function retrieve all the acceptable terms for a quality (eg hdrip and bdrip for brrip)
+        Then it creates regex accepted by t411 to search for one of this term
+        t411 have to handle alternatives as OR and then the regex is firstAlternative|secondAlternative
+
+        In alternatives, there can be "doubled terms" as "br rip" or "bd rip" for brrip
+        These doubled terms have to be handled as AND and are then (firstBit&secondBit)
+        """
+        alternatives = quality.get('alternative', [])
+        # first acceptable term is the identifier itself
+        acceptableTerms = [quality['identifier']]
+        log.debug('Requesting alternative quality terms for : ' + str(acceptableTerms) )
+        # handle single terms
+        acceptableTerms.extend([ term for term in alternatives if type(term) == type('') ])
+        # handle doubled terms (such as 'dvd rip')
+        doubledTerms = [ term for term in alternatives if type(term) == type(('', '')) ]
+        acceptableTerms.extend([ '('+first+'%26'+second+')' for (first,second) in doubledTerms ])
+        # join everything and return
+        log.debug('Found alternative quality terms : ' + str(acceptableTerms).replace('%26', ' '))
+        return '|'.join(acceptableTerms)
+
+    def replaceTitle(self, releaseNameI, titleI, newTitleI):
+        """
+        This function is replacing the title in the release name by the old one,
+        so that couchpotato recognise it as a valid release.
+        """
+
+        if newTitleI is None: # if the newTitle is empty, do nothing
+            return releaseNameI
+        else:
+            # input as lower case
+            releaseName = releaseNameI.lower()
+            title = titleI.lower()
+            newTitle = newTitleI.lower()
+            #log.debug('Replacing -- ' + newTitle.decode('ascii', errors='replace') + ' -- in the release -- ' + releaseName.decode('ascii', errors='replace') + ' -- by the original title -- ' + title.decode('ascii', errors='replace'))
+            separatedWords = []
+            for s in releaseName.split(' '):
+                separatedWords.extend(s.split('.'))
+            # test how far the release name corresponds to the original title
+            index = 0
+            while separatedWords[index] in title.split(' '):
+                index += 1
+            # test how far the release name corresponds to the new title
+            newIndex = 0
+            while separatedWords[newIndex] in newTitle.split(' '):
+                newIndex += 1
+            # then determine if it correspoinds to the new title or old title
+            if index >= newIndex:
+                # the release name corresponds to the original title. SO no change needed
+                log.debug('The release name is already corresponding. Changed nothing.')
+                return releaseNameI
+            else:
+                # otherwise, we replace the french title by the original title
+                finalName = [title]
+                finalName.extend(separatedWords[newIndex:])
+                newReleaseName = ' '.join(finalName)
+                log.debug('The new release name is : ' + newReleaseName)
+                return newReleaseName
+
+    def getFrenchTitle(self, title, year):
+        """
+        This function uses TMDB API to get the French movie title of the given title.
+        """
+
+        url = "https://api.themoviedb.org/3/search/movie?api_key=0f3094295d96461eb7a672626c54574d&language=fr&query=%s" % title
+        log.debug('Looking on TMDB for French title of : ' + title)
+        #data = self.getJsonData(url, decode_from = 'utf8')
+        data = self.getJsonData(url)
+        try:
+            if data['results'] != None:
+                for res in data['results']:
+                    yearI = res['release_date']
+                    if year in yearI:
+                        break
+                frTitle = res['title'].lower()
+                if frTitle == title:
+                    log.debug('TMDB report identical FR and original title')
+                    return None
+                else:
+                    log.debug(u'API TMDB found a french title => ' + frTitle)
+                    return frTitle
+            else:
+                log.debug('TMDB could not find a movie corresponding to : ' + title)
+                return None
+        except:
+            log.error('Failed to parse TMDB API: %s' % (traceback.format_exc()))
