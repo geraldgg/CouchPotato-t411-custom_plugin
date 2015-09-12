@@ -39,7 +39,7 @@ class T411(TorrentProvider, MovieProvider):
             if (headers['Location'] != 'login.php'):
                 return urllib2.HTTPRedirectHandler.http_error_302(self, req, fp, code, msg, headers)
             else:
-                raise Base.NotLoggedInHTTPError(req.get_full_url(), code, msg, headers, fp)
+                raise T411.NotLoggedInHTTPError(req.get_full_url(), code, msg, headers, fp)
 
     def getSearchParams(self, movie, quality):
         results = []
