@@ -21,7 +21,7 @@ class Cpasbien(TorrentProvider, MovieProvider):
     urls = {
         'test': 'http://www.cpasbien.pw/',
         'search': 'http://www.cpasbien.pw/recherche/',
-        'download': 'http://www.cpasbien.pw/telecharge/%s'
+        'download': 'http://www.cpasbien.pw/telechargement/%s'
     }
 
     http_time_between_calls = 1 #seconds
@@ -113,7 +113,7 @@ class Cpasbien(TorrentProvider, MovieProvider):
                             new['url'] = url_download
                             new['detail_url'] = detail_url
                            
-                            new['size'] = self.parseSize(size)
+                            new['size'] = self.parseSize(str(size))
                             new['age'] = self.ageToDays(age)
                             new['seeders'] = tryInt(seeder)
                             new['leechers'] = tryInt(leecher)
@@ -211,5 +211,5 @@ class Cpasbien(TorrentProvider, MovieProvider):
         try:
             return urllib2.urlopen(req).read()
         except:
-            log.error('Failed downloading from %s: %s', (self.getName(), traceback.format_exc()))
+            log.error('Failed downloading from %s: %s %s', (self.getName(), url, traceback.format_exc()))
 
