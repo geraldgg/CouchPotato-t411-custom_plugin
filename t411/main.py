@@ -16,12 +16,14 @@ log = CPLog(__name__)
 
 
 class T411(TorrentProvider, MovieProvider):
+    t411root = 'http://www.t411.in'
 
     urls = {
-        'test': 'http://www.t411.io/',
-        'detail': 'http://www.t411.io/torrents/?id=%s',
-        'search': 'http://www.t411.io/torrents/search/?',
-        'download': 'http://www.t411.io/torrents/download/?id=%s'
+        'test': t411root+'/',
+        'detail': t411root+'/torrents/?id=%s',
+        'search': t411root+'/torrents/search/?',
+        'download': t411root+'/torrents/download/?id=%s',
+        'login': t411root+'/users/login/'
     }
 
     http_time_between_calls = 1 #seconds
@@ -178,8 +180,8 @@ class T411(TorrentProvider, MovieProvider):
                                 testname=searcher.correctName(name,movie['title'])
                                 if not testname:
                                     continue
-                                url = ('http://www.t411.io/torrents/download/?id=%s' % idt)
-                                detail_url = ('http://www.t411.io/torrents/?id=%s' % idt)
+                                url = (self.urls['download'] % idt)
+                                detail_url = (self.urls['detail'] % idt)
                                 leecher = result.findAll('td')[8].text
                                 size = result.findAll('td')[5].text
                                 age = result.findAll('td')[4].text
@@ -243,7 +245,7 @@ class T411(TorrentProvider, MovieProvider):
         ]
 
         try:
-            response = self.opener.open('http://www.t411.io/users/login/', self.getLoginParams())
+            response = self.opener.open(self.urls['login'], self.getLoginParams())
         except urllib2.URLError as e:
             log.error('Login to T411 failed: %s' % e)
             return False

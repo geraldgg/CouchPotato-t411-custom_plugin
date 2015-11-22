@@ -17,11 +17,11 @@ log = CPLog(__name__)
 
 
 class Cpasbien(TorrentProvider, MovieProvider):
-
+    cpasbienroot = 'http://www.cpasbien.io/'
     urls = {
-        'test': 'http://www.cpasbien.pw/',
-        'search': 'http://www.cpasbien.pw/recherche/',
-        'download': 'http://www.cpasbien.pw/telechargement/%s'
+        'test': cpasbienroot,
+        'search': cpasbienroot + 'recherche/',
+        'download': cpasbienroot + 'telechargement/%s'
     }
 
     http_time_between_calls = 1 #seconds
@@ -170,7 +170,7 @@ class Cpasbien(TorrentProvider, MovieProvider):
         ]
 
         try:
-            response = opener.open('http://www.cpasbien.pw', tryUrlencode({'url': '/'}))
+            response = opener.open(cpasbienroot, tryUrlencode({'url': '/'}))
         except urllib2.URLError as e:
             log.error('Login to cPASbien failed: %s' % e)
             return False
