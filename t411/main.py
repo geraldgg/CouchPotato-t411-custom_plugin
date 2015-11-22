@@ -128,6 +128,7 @@ class T411(TorrentProvider, MovieProvider):
                         'name': self.replaceTitle(release_name, title, newTitle),
                         'url': self.urls['download'] % idt,
                         'detail_url': self.urls['detail'] % idt,
+						'age': age,
                         'size': self.parseSize(str(result.findAll('td')[5].text)),
                         'seeders': result.findAll('td')[7].text,
                         'leechers': result.findAll('td')[8].text,
