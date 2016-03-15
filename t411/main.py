@@ -16,7 +16,7 @@ log = CPLog(__name__)
 
 
 class T411(TorrentProvider, MovieProvider):
-    t411root = 'http://www.t411.in'
+    t411root = 'http://www.t411.ch'
 
     urls = {
         'test': t411root+'/',
