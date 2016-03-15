@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
-from couchpotato.core.helpers.variable import tryInt
+from couchpotato import fireEvent
+from couchpotato.core.helpers.variable import tryInt, possibleTitles
 from couchpotato.core.logger import CPLog
 from couchpotato.core.helpers.encoding import simplifyString, tryUrlencode
 from couchpotato.core.media._base.providers.torrent.base import TorrentProvider
@@ -128,7 +129,7 @@ class T411(TorrentProvider, MovieProvider):
                         'name': self.replaceTitle(release_name, title, newTitle),
                         'url': self.urls['download'] % idt,
                         'detail_url': self.urls['detail'] % idt,
-						'age': age,
+						      'age': age,
                         'size': self.parseSize(str(result.findAll('td')[5].text)),
                         'seeders': result.findAll('td')[7].text,
                         'leechers': result.findAll('td')[8].text,
@@ -212,6 +213,11 @@ class T411(TorrentProvider, MovieProvider):
                     log.debug('No search results found.')
             else:
                 log.debug('No search results found.')
+        if not results:
+            media_title = fireEvent('library.query', movie, include_year = False, single = True)
+
+            for title in possibleTitles(media_title):
+                self._searchOnTitle(title, movie, quality, results)
 
     def ageToDays(self, age_str):
         age = 0
