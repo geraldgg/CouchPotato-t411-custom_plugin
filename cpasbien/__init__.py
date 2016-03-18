@@ -18,15 +18,6 @@ config = [{
                     'type': 'enabler',
                     'default': False,
                 },
-                                {
-                    'name': 'username',
-                    'default': '',
-                },
-                {
-                    'name': 'password',
-                    'default': '',
-                    'type': 'password',
-                },
                 {
                     'name': 'seed_ratio',
                     'label': 'Seed ratio',
