@@ -25,9 +25,6 @@ class Cpasbien(TorrentProvider, MovieProvider):
         'download': cpasbienroot + 'telechargement/%s'
     }
 
-    http_time_between_calls = 1 #seconds
-    cat_backup_id = None
-
     class NotLoggedInHTTPError(urllib2.HTTPError):
         def __init__(self, url, code, msg, headers, fp):
             urllib2.HTTPError.__init__(self, url, code, msg, headers, fp)
@@ -195,7 +192,7 @@ class Cpasbien(TorrentProvider, MovieProvider):
         ]
 
         try:
-            response = opener.open(cpasbienroot, tryUrlencode({'url': '/'}))
+            response = opener.open(Cpasbien.cpasbienroot, tryUrlencode({'url': '/'}))
         except urllib2.URLError as e:
             log.error('Login to cPASbien failed: %s' % e)
             return False
