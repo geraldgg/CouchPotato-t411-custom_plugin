@@ -192,7 +192,7 @@ class Cpasbien(TorrentProvider, MovieProvider):
         ]
 
         try:
-            response = opener.open(Cpasbien.cpasbienroot, tryUrlencode({'url': '/'}))
+            response = opener.open(self.cpasbienroot, tryUrlencode({'url': '/'}))
         except urllib2.URLError as e:
             log.error('Login to cPASbien failed: %s' % e)
             return False
