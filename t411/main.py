@@ -53,7 +53,7 @@ class T411(TorrentProvider, MovieProvider):
             subcat=455
         elif 'Documentaire' in moviegenre or 'Documentary' in moviegenre:
             subcat=634
-        else:    
+        else:
             subcat=631
         if moviequality in ['720p']:
             qualpar="&term%5B17%5D%5B%5D=541&term%5B17%5D%5B%5D=542&term%5B17%5D%5B%5D=719&term%5B17%5D%5B%5D=1160&term%5B17%5D%5B%5D=722&term%5B7%5D%5B%5D=15&term%5B7%5D%5B%5D=12&term%5B7%5D%5B%5D=1175"
@@ -67,7 +67,7 @@ class T411(TorrentProvider, MovieProvider):
             qualpar="&term%5B17%5D%5B%5D=541&term%5B17%5D%5B%5D=542&term%5B17%5D%5B%5D=719&term%5B17%5D%5B%5D=1160&term%5B17%5D%5B%5D=722&term%5B7%5D%5B%5D=8&term%5B7%5D%5B%5D=9&term%5B7%5D%5B%5D=10&term%5B7%5D%5B%5D=11&term%5B7%5D%5B%5D=18&term%5B7%5D%5B%5D=19"
         if quality['custom']['3d']==1:
             qualpar=qualpar+"&term%5B9%5D%5B%5D=24&term%5B9%5D%5B%5D=23"
-            
+
         for MovieTitle in MovieTitles:
             try:
                 TitleStringReal = str(MovieTitle.encode("latin-1").replace('-',' '))
@@ -78,8 +78,19 @@ class T411(TorrentProvider, MovieProvider):
                 results.append(urllib.urlencode( {'search': simplifyString(unicode(TitleStringReal,"latin-1")), 'cat' : 210, 'submit' : 'Recherche', 'subcat': subcat } ) + qualpar)
             except:
                 continue
-        
+
         return results
+
+    def getUnicodeUtf8String(self, s):
+        if isinstance(s, str):
+            try:
+                return unicode(s).encode('utf-8')
+            except UnicodeDecodeError:
+                return unicode(s, 'cp1252').encode('utf-8')
+        elif isinstance(s, unicode):
+            return s.encode('utf-8')
+        else:
+            return s
 
     def _searchOnTitle(self, title, movie, quality, results):
 
@@ -152,31 +163,31 @@ class T411(TorrentProvider, MovieProvider):
                 timetosleep= 10-(actualtime-lastsearch)
                 time.sleep(timetosleep)
             URL = self.urls['search']+searchString
-                
-            r = self.opener.open(URL)   
+
+            r = self.opener.open(URL)
             soup = BeautifulSoup( r, "html.parser" )
             if soup.find('table', attrs = {'class':'results'}):
                 resultdiv = soup.find('table', attrs = {'class':'results'}).find('tbody')
             else:
                 continue
             if resultdiv:
-                try:   
+                try:
                     for result in resultdiv.findAll('tr'):
                         try:
                             categorie = result.findAll('td')[0].findAll('a')[0]['href'][result.findAll('td')[0].findAll('a')[0]['href'].find('='):]
                             insert = 0
-                        
+
                             if categorie == '=631':
                                 insert = 1
                             if categorie == '=455':
                                 insert = 1
                             if categorie == '=634':
                                 insert = 1
-                         
+
                             if insert == 1 :
-                         
+
                                 new = {}
-        
+
                                 idt = result.findAll('td')[2].findAll('a')[0]['href'][1:].replace('torrents/nfo/?id=','')
                                 name = result.findAll('td')[1].findAll('a')[0]['title']
                                 testname=searcher.correctName(name,movie['title'])
@@ -188,10 +199,10 @@ class T411(TorrentProvider, MovieProvider):
                                 size = result.findAll('td')[5].text
                                 age = result.findAll('td')[4].text
                                 seeder = result.findAll('td')[7].text
-        
+
                                 def extra_check(item):
                                     return True
-        
+
                                 new['id'] = idt
                                 new['name'] = name + ' french'
                                 new['url'] = url
@@ -205,10 +216,10 @@ class T411(TorrentProvider, MovieProvider):
 
                                 log.debug("url='%s'"%str(url))
                                 results.append(new)
-    
+
                         except:
                             log.error('Failed parsing T411: %s', traceback.format_exc())
-    
+
                 except AttributeError:
                     log.debug('No search results found.')
             else:
@@ -272,8 +283,8 @@ class T411(TorrentProvider, MovieProvider):
              'remember': '1',
              'url': '/'
         })
-        
-        
+
+
     def download(self, url = '', nzb_id = ''):
         if not self.last_login_check and not self.login():
             return
@@ -369,12 +380,13 @@ class T411(TorrentProvider, MovieProvider):
         #data = self.getJsonData(url, decode_from = 'utf8')
         data = self.getJsonData(url)
         try:
-            if data['results'] != None:
+            if data and data['results'] != None:
+                frTitle = ''
                 for res in data['results']:
                     yearI = res['release_date']
                     if year in yearI:
+                        frTitle = res['title'].lower()
                         break
-                frTitle = res['title'].lower()
                 if frTitle == title:
                     log.debug('TMDB report identical FR and original title')
                     return None

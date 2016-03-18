@@ -113,7 +113,7 @@ class Cpasbien(TorrentProvider, MovieProvider):
                             tmp = detail_url.split('/')[-1].replace('.html','.torrent')
                             url_download = (self.urls['download'] % tmp)
                             size = result.findAll(attrs = {'class' : ["poid"]})[0].text
-                            seeder = result.findAll(attrs = {'class' : ["seed_ok"]})[0].text
+                            seeder = self.getUnicodeUtf8String(result.findAll(attrs = {'class' : ["seed_ok"]})[0].text)
                             leecher = result.findAll(attrs = {'class' : ["down"]})[0].text
                             age = '1'
 
@@ -207,32 +207,32 @@ class Cpasbien(TorrentProvider, MovieProvider):
         else:
             log.error('Login to cPASbien failed: returned code %d' % response.getcode())
             return False
-        
-        
+
+
     def loginDownload(self, url = '', nzb_id = ''):
         values = {
           'url' : '/'
         }
         data_tmp = urllib.urlencode(values)
         req = urllib2.Request(url, data_tmp, headers={'User-Agent' : "Mozilla/5.0"} )
-        
+
         try:
             if not self.last_login_check and not self.login():
                 log.error('Failed downloading from %s', self.getName())
             return urllib2.urlopen(req).read()
         except:
             log.error('Failed downloading from %s: %s', (self.getName(), traceback.format_exc()))
-            
+
     def download(self, url = '', nzb_id = ''):
         if not self.last_login_check and not self.login():
             return
-        
+
         values = {
           'url' : '/'
         }
         data_tmp = urllib.urlencode(values)
         req = urllib2.Request(url, data_tmp, headers={'User-Agent' : "Mozilla/5.0"} )
-        
+
         try:
             return urllib2.urlopen(req).read()
         except:
