@@ -92,6 +92,17 @@ class T411(TorrentProvider, MovieProvider):
         else:
             return s
 
+    def getEncodedString(self, s, encoding):
+        if isinstance(s, str):
+            try:
+                return unicode(s).encode(encoding)
+            except UnicodeDecodeError:
+                return unicode(s, 'cp1252').encode(encoding)
+        elif isinstance(s, unicode):
+            return s.encode(encoding)
+        else:
+            return s
+
     def _searchOnTitle(self, title, movie, quality, results):
 
         # test the new title and search for it if valid
@@ -103,7 +114,7 @@ class T411(TorrentProvider, MovieProvider):
             request = (u'(' + title + u')|(' + newTitle + u')').replace(':', '')
         else:
             request = title.replace(':', '')
-        request = urllib2.quote(request.encode('iso-8859-1'))
+        request = urllib2.quote(self.getEncodedString(request, 'iso-8859-1'))
 
         log.debug('Looking on T411 for movie named %s or %s' % (title, newTitle))
         url = self.urls['search'] + "search=%s %s" % (request, self.acceptableQualityTerms(quality))
@@ -264,7 +275,7 @@ class T411(TorrentProvider, MovieProvider):
 
         try:
             response = self.opener.open(self.urls['login'], self.getLoginParams())
-        except urllib2.URLError as e:
+        except (urllib2.URLError, urllib2.HTTPError) as e:
             log.error('Login to T411 failed: %s' % e)
             return False
 

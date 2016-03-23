@@ -103,7 +103,7 @@ class Cpasbien(TorrentProvider, MovieProvider):
                         try:
                             new = {}
                             name = result.findAll(attrs = {'class' : ["titre"]})[0].text
-                            testname=searcher.correctName(name,movie['title'])
+                            testname=searcher.correctName(name, movie['title'])
                             if testname==0:
                                 continue
                             detail_url = result.find("a")['href']
