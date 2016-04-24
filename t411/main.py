@@ -114,7 +114,7 @@ class T411(TorrentProvider, MovieProvider):
             request = (u'(' + title + u')|(' + newTitle + u')').replace(':', '')
         else:
             request = title.replace(':', '')
-        request = urllib2.quote(self.getEncodedString(request, 'iso-8859-1'))
+        request = urllib2.quote(self.getEncodedString(request, 'utf-8'))
 
         log.debug('Looking on T411 for movie named %s or %s' % (title, newTitle))
         url = self.urls['search'] + "search=%s %s" % (request, self.acceptableQualityTerms(quality))

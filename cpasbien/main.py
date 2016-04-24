@@ -53,14 +53,14 @@ class Cpasbien(TorrentProvider, MovieProvider):
             for title in possibleTitles(media_title):
                 self._searchOnTitle(title, movie, quality, results)
 
-    def getUnicodeUtf8String(self, s):
+    def getEncodedString(self, s, encoding='utf-8'):
         if isinstance(s, str):
             try:
-                return unicode(s).encode('utf-8')
+                return unicode(s).encode(encoding)
             except UnicodeDecodeError:
-                return unicode(s, 'cp1252').encode('utf-8')
+                return unicode(s, 'cp1252').encode(encoding)
         elif isinstance(s, unicode):
-            return s.encode('utf-8')
+            return s.encode(encoding)
         else:
             return s
 
@@ -72,7 +72,7 @@ class Cpasbien(TorrentProvider, MovieProvider):
             URL = urllib2.quote(URL.encode('utf8'), ":/?=")
 
             values = {
-              'champ_recherche' : self.getUnicodeUtf8String(title)
+              'champ_recherche' : self.getEncodedString(title)
             }
 
             data_tmp = urllib.urlencode(values)
