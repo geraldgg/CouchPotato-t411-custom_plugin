@@ -18,7 +18,7 @@ log = CPLog(__name__)
 
 
 class Cpasbien(TorrentProvider, MovieProvider):
-    cpasbienroot = 'http://www.cpasbien.io/'
+    cpasbienroot = 'http://www.cpasbien.cm/'
     urls = {
         'test': cpasbienroot,
         'search': cpasbienroot + 'recherche/',

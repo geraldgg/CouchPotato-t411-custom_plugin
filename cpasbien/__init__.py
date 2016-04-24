@@ -10,7 +10,7 @@ config = [{
             'tab': 'searcher',
             'list': 'torrent_providers',
             'name': 'cpasbien',
-            'description': 'See <a href="http://www.cpasbien.pw/">cPASbien</a>',
+            'description': 'See <a href="http://www.cpasbien.cm/">cPASbien</a>',
             'wizard': True,
             'options': [
                 {
