@@ -81,17 +81,6 @@ class T411(TorrentProvider, MovieProvider):
 
         return results
 
-    def getUnicodeUtf8String(self, s):
-        if isinstance(s, str):
-            try:
-                return unicode(s).encode('utf-8')
-            except UnicodeDecodeError:
-                return unicode(s, 'cp1252').encode('utf-8')
-        elif isinstance(s, unicode):
-            return s.encode('utf-8')
-        else:
-            return s
-
     def getEncodedString(self, s, encoding):
         if isinstance(s, str):
             try:

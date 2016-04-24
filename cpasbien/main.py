@@ -110,7 +110,7 @@ class Cpasbien(TorrentProvider, MovieProvider):
                             tmp = detail_url.split('/')[-1].replace('.html','.torrent')
                             url_download = (self.urls['download'] % tmp)
                             size = result.findAll(attrs = {'class' : ["poid"]})[0].text
-                            seeder = self.getUnicodeUtf8String(result.findAll(attrs = {'class' : ["seed_ok"]})[0].text)
+                            seeder = self.getEncodedString(result.findAll(attrs = {'class' : ["seed_ok"]})[0].text)
                             leecher = result.findAll(attrs = {'class' : ["down"]})[0].text
                             age = '1'
 
@@ -127,11 +127,11 @@ class Cpasbien(TorrentProvider, MovieProvider):
                             if add == 1:
 
                                 new['id'] = id
-                                new['name'] = self.getUnicodeUtf8String(name.strip())
+                                new['name'] = self.getEncodedString(name.strip())
                                 new['url'] = url_download
                                 new['detail_url'] = detail_url
 
-                                new['size'] = self.parseSize(self.getUnicodeUtf8String(size))
+                                new['size'] = self.parseSize(self.getEncodedString(size))
                                 new['age'] = self.ageToDays(age)
                                 new['seeders'] = tryInt(seeder)
                                 new['leechers'] = tryInt(leecher)
